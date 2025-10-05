@@ -53,7 +53,7 @@ void do_ls(const char *dir)
     {
         if (entry->d_name[0] == '.')
             continue;
-        printf("%s\t", entry->d_name);
+        printf("%s\n", entry->d_name);
     }
 
     if (errno != 0)
