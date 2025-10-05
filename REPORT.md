@@ -92,3 +92,39 @@ If you only used a fixed-width fallback (e.g., 80 columns) instead of detecting 
 
 
 ---
+
+## Feature 4 Questions
+
+### Compare the implementation complexity of the "down then across" (vertical) printing logic versus the "across" (horizontal) printing logic. Which one requires more pre-calculation and why?
+
+The **"down then across" (vertical)** printing logic is significantly **more complex** and requires **more pre-calculation** than the "across" (horizontal) logic.
+
+| Logic | Complexity | Required Pre-calculation |
+| :--- | :--- | :--- |
+| **Across (Horizontal)** | Lower | Only needs to track the current column position (or character count) and ensure a newline is printed when the terminal width is exceeded. |
+| **Down then Across (Vertical)** | Higher | Requires calculating the **maximum filename length**, the **number of columns** that fit on the screen, and the **number of rows**. This pre-calculation is necessary to derive the non-linear index formula (i.e., $Index = Row + (j \times Rows)$) used to jump between columns within the loop structure. |
+
+The vertical logic needs all item counts, maximum lengths, and screen size *before* printing can begin, whereas the horizontal logic can primarily make decisions on a per-item basis as it iterates through the list linearly.
+
+
+
+### Describe the strategy you used in your code to manage the different display modes (`-l`, `-x`, and default). How did your program decide which function to call for printing?
+
+The strategy to manage different display modes typically involves:
+
+1.  **Command-Line Option Parsing:** Using a function (like `getopt()`) to parse command-line arguments and set corresponding **global flags** or an **enumeration variable** (e.g., `DISPLAY_MODE`).
+    * If `-l` is present, set the mode to `LONG_FORMAT`.
+    * If `-x` is present, set the mode to `ACROSS_FORMAT`.
+    * If neither is present, default to `VERTICAL_FORMAT` (down then across).
+
+2.  **Central Dispatch:** Using a **switch statement** or a series of **`if/else if`** checks on the `DISPLAY_MODE` variable after all input files/directories have been processed.
+
+3.  **Specialized Functions:** Defining a specific printing function for each mode:
+    * `print()` (for `-l`)
+    * `print_horizontal_display()` (for `-x`)
+    * `print_column_display()` (for default)
+
+The program decides which function to call by using the central dispatch mechanism (the `switch` statement). Based on the value of the `DISPLAY_MODE` variable set during the initial argument parsing, execution branches to the appropriate, specialized printing function responsible for formatting and displaying the data for all files and directories.
+
+---
+
