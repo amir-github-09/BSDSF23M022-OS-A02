@@ -155,4 +155,46 @@ int cmpstring(const void *a, const void *b);
 
 ---
 
+## Feature 6 Questions
+
+### How do ANSI escape codes work to produce color in a standard Linux terminal? Show the specific code sequence for printing text in green.
+
+ANSI escape codes are a standard mechanism used to control cursor movement, color, and other display options on terminal emulators. They are sequences of bytes that the terminal interprets as commands rather than characters to be displayed.
+
+* **Structure:** An ANSI escape code always begins with the **Escape character** (ASCII 27 or `\033` in C strings), followed immediately by an open square bracket **`[`**. This combination is called the **Control Sequence Introducer (CSI)**: `\033[`.
+* **Parameters:** Following the CSI are numerical parameters separated by semicolons (`;`), which specify the desired graphics rendition (e.g., foreground color, background color, bold).
+* **Terminator:** The sequence ends with a letter (e.g., `m`), which is the command that applies the preceding parameters. The `m` command is the **Select Graphic Rendition (SGR)** command, which handles colors and text styles.
+
+#### Code Sequence for Printing Text in Green
+
+The specific SGR code for setting the **standard foreground green color** is $\mathbf{32}$.
+
+The full code sequence to print text in green is:
+* `\033[`: Control Sequence Introducer (CSI)
+* `32`: Parameter for **Foreground Color Green**
+* `m`: SGR (Select Graphic Rendition) command
+
+To print the word "Hello" in green and then **reset** the color (crucial to prevent subsequent text from also being green), you would use:
+```c
+printf("\033[32mHello\033[0m\n");
+
+### To color an executable file, you need to check its permission bits. Explain which bits in the `st_mode` field you need to check to determine if a file is executable by the owner, group, or others.
+
+To determine if a file is executable by the owner, group, or others, you need to check the following specific bits in the **`st_mode`** field of the `struct stat`, using the **bitwise AND operator (`&`)** with the corresponding predefined macros:
+
+| Executable By | `st_mode` Bit (Octal) | Predefined Macro | Condition Check |
+| :--- | :--- | :--- | :--- |
+| **Owner (User)** | $9^{th}$ bit (0100) | **`S_IXUSR`** | `(statbuf.st_mode & S_IXUSR)` |
+| **Group** | $6^{th}$ bit (0010) | **`S_IXGRP`** | `(statbuf.st_mode & S_IXGRP)` |
+| **Others** | $3^{rd}$ bit (0001) | **`S_IXOTH`** | `(statbuf.st_mode & S_IXOTH)` |
+
+A file is considered executable for coloring purposes if **any** of these three bits is set. Therefore, the overall check often looks like:
+
+```c
+if (statbuf.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
+    // The file is executable by at least one entity
+}
+
+---
+
 
