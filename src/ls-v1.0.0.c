@@ -108,7 +108,6 @@ void do_ls(const char *dir, int long_flag)
         // Skip hidden files
         if (entry->d_name[0] == '.')
             continue;
-        printf("%s\n", entry->d_name);
 
         snprintf(path, sizeof(path), "%s/%s", dir, entry->d_name);
 
