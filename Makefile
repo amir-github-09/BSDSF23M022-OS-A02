@@ -2,7 +2,7 @@
 
 CC = gcc
 CFLAGS = -Wall -g
-SRC = src/ls-v1.0.0.c
+SRC = src/ls-v1.2.0.c
 BIN = bin/ls
 
 all: $(BIN)
