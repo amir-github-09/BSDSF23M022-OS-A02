@@ -1,14 +1,13 @@
 
-
 /*
-* Programming Assignment 02: lsv1.0.0
-* This is the source file of version 1.0.0
-* Read the write-up of the assignment to add the features to this base version
+* Programming Assignment 02: ls v1.1.0
+* Base: v1.0.0 + Feature 2 (-l long listing)
 * Usage:
-*       $ lsv1.0.0 
-*       % lsv1.0.0  /home
-*       $ lsv1.0.0  /home/kali/   /etc/
+*   $ ./bin/ls
+*   $ ./bin/ls -l
+*   $ ./bin/ls -l /home /etc
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -16,50 +15,162 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <pwd.h>      // getpwuid()
+#include <grp.h>      // getgrgid()
+#include <time.h>     // strftime()
+#include <limits.h>   // PATH_MAX
 
 extern int errno;
 
-void do_ls(const char *dir);
+void do_ls(const char *dir, int long_flag);   // ✅ added semicolon here!
+void mode_to_str(mode_t mode, char *str);
 
 int main(int argc, char const *argv[])
 {
-    if (argc == 1)
+    int long_flag = 0;
+    int opt;
+
+    // detect -l option
+    while ((opt = getopt(argc, (char * const *)argv, "l")) != -1)
     {
-        do_ls(".");
+        switch (opt)
+        {
+        case 'l':
+            long_flag = 1;
+            break;
+        default:
+            fprintf(stderr, "Usage: %s [-l] [dir...]\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // remaining args after options
+    if (optind == argc)
+    {
+        do_ls(".", long_flag);
     }
     else
     {
-        for (int i = 1; i < argc; i++)
+        for (int i = optind; i < argc; i++)
         {
-            printf("Directory listing of %s : \n", argv[i]);
-            do_ls(argv[i]);
-	    puts("");
+            printf("Directory listing of %s:\n", argv[i]);
+            do_ls(argv[i], long_flag);
+            puts("");
         }
     }
     return 0;
 }
 
-void do_ls(const char *dir)
+void mode_to_str(mode_t mode, char *str)
 {
+    str[0] = S_ISDIR(mode) ? 'd' :
+             S_ISLNK(mode) ? 'l' :
+             S_ISCHR(mode) ? 'c' :
+             S_ISBLK(mode) ? 'b' :
+             S_ISFIFO(mode)? 'p' :
+             S_ISSOCK(mode)? 's' : '-';
+
+    str[1] = (mode & S_IRUSR) ? 'r' : '-';
+    str[2] = (mode & S_IWUSR) ? 'w' : '-';
+    str[3] = (mode & S_IXUSR) ? 'x' : '-';
+    str[4] = (mode & S_IRGRP) ? 'r' : '-';
+    str[5] = (mode & S_IWGRP) ? 'w' : '-';
+    str[6] = (mode & S_IXGRP) ? 'x' : '-';
+    str[7] = (mode & S_IROTH) ? 'r' : '-';
+    str[8] = (mode & S_IWOTH) ? 'w' : '-';
+    str[9] = (mode & S_IXOTH) ? 'x' : '-';
+    str[10] = '\0';
+}
+
+
+void do_ls(const char *dir, int long_flag)
+{
+    DIR *dp;
     struct dirent *entry;
-    DIR *dp = opendir(dir);
+    struct stat st;
+    char path[PATH_MAX];
+    long total_blocks = 0;
+
+    dp = opendir(dir);
     if (dp == NULL)
     {
-        fprintf(stderr, "Cannot open directory : %s\n", dir);
+        fprintf(stderr, "Cannot open directory: %s\n", dir);
         return;
     }
+
     errno = 0;
+
+    // ------------------------------------------------------------
+    // 1️⃣ First pass — calculate total blocks
+    // ------------------------------------------------------------
     while ((entry = readdir(dp)) != NULL)
     {
+        // Skip hidden files
         if (entry->d_name[0] == '.')
             continue;
         printf("%s\n", entry->d_name);
+
+        snprintf(path, sizeof(path), "%s/%s", dir, entry->d_name);
+
+        if (lstat(path, &st) == -1)
+            continue;
+
+        total_blocks += st.st_blocks;
+    }
+
+    // Convert 512-byte blocks to KB (like real ls)
+    if (long_flag)
+        printf("total %ld\n", total_blocks / 2);
+
+    // ------------------------------------------------------------
+    // 2️⃣ Second pass — actual listing
+    // ------------------------------------------------------------
+    rewinddir(dp);
+    errno = 0;
+
+    while ((entry = readdir(dp)) != NULL)
+    {
+        // Skip hidden files
+        if (entry->d_name[0] == '.')
+            continue;
+
+        snprintf(path, sizeof(path), "%s/%s", dir, entry->d_name);
+
+        if (lstat(path, &st) == -1)
+        {
+            perror("lstat");
+            continue;
+        }
+
+        if (long_flag)
+        {
+            char perms[11];
+            mode_to_str(st.st_mode, perms);
+
+            struct passwd *pw = getpwuid(st.st_uid);
+            struct group  *gr = getgrgid(st.st_gid);
+
+            char timebuf[64];
+            struct tm *tm = localtime(&st.st_mtime);
+            strftime(timebuf, sizeof(timebuf), "%b %d %H:%M", tm);
+
+            printf("%s %2lu %s %s %8lld %s %s\n",
+                   perms,
+                   (unsigned long)st.st_nlink,
+                   pw ? pw->pw_name : "?",
+                   gr ? gr->gr_name : "?",
+                   (long long)st.st_size,
+                   timebuf,
+                   entry->d_name);
+        }
+        else
+        {
+            printf("%s\n", entry->d_name);
+        }
     }
 
     if (errno != 0)
-    {
-        perror("readdir failed");
-    }
+        perror("readdir");
 
     closedir(dp);
 }

@@ -1,7 +1,7 @@
 
 
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -O2
+CFLAGS = -Wall -g
 SRC = src/ls-v1.0.0.c
 BIN = bin/ls
 
