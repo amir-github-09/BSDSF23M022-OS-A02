@@ -128,3 +128,31 @@ The program decides which function to call by using the central dispatch mechani
 
 ---
 
+## Feature-5  Questions/Answers
+
+### 1. Why is it necessary to read all directory entries into memory before you can sort them? What are the potential drawbacks of this approach for directories containing millions of files?
+
+It is necessary to read all directory entries into memory because sorting requires access to **all elements at once**. Functions like `qsort()` operate on arrays in memory, so without loading the entries into an array, you cannot rearrange them alphabetically.
+
+**Potential drawbacks for very large directories:**
+- High **memory usage**: Storing millions of filenames can exhaust RAM.
+- **Performance issues**: Sorting millions of entries can be slow.
+- Possible **allocation failures** if the system cannot allocate enough contiguous memory.
+
+---
+
+### 2. Explain the purpose and signature of the comparison function required by `qsort()`. How does it work, and why must it take `const void *` arguments?
+
+**Purpose:**  
+The comparison function tells `qsort()` how to order two elements. It returns:
+- `< 0` if the first element should come **before** the second,
+- `0` if they are **equal**,
+- `> 0` if the first should come **after** the second.
+
+**Signature example:**
+```c
+int cmpstring(const void *a, const void *b);
+
+---
+
+
