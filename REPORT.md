@@ -197,4 +197,47 @@ if (statbuf.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
 
 ---
 
+## Feature 7 Questions
 
+### In a recursive function, what is a "base case"? In the context of your recursive ls, what is the base case that stops the recursion from continuing forever?
+
+#### What is a "Base Case"?
+
+In a recursive function, the **base case** is the **non-recursive condition** that **stops the function from calling itself further**. It is the point at which the recursion unwinds and returns a result. Without a base case, or with an improperly defined one, a recursive function will lead to an infinite loop, eventually causing a **stack overflow**.
+
+#### Base Case in Recursive `ls`
+
+In the context of a recursive `ls` (implementing the `-R` option), the primary base case that stops the recursion from continuing forever is the condition where the function encounters an entry that **is not a directory**.
+
+The recursive `do_ls()` function will call itself only if the current entry it processes is a directory (and meets other criteria like not being "." or "..").
+
+Therefore, the base cases (the points where recursion stops) are when `do_ls()` processes an entry that is:
+
+* A **regular file**, symbolic link, block device, etc. (i.e., **not a directory**). The function simply prints its details and returns.
+* The **current directory** (`.`) or **parent directory** (`..`). These are explicitly skipped to prevent infinite or redundant loops.
+* A **directory for which the user lacks read permission** (an error condition).
+
+The most fundamental base case is encountering a **non-directory file type**.
+
+***
+
+### Explain why it is essential to construct a full path (e.g., `"parent_dir/subdir"`) before making a recursive call. What would happen if you simply called `do_ls("subdir")` from within the `do_ls("parent_dir")` function call?
+
+#### Why Construct a Full Path?
+
+It is essential to construct a **full, absolute, or relative path** (e.g., `"parent_dir/subdir"`) before making a recursive call because system calls like `stat()`, `lstat()`, and `opendir()` typically resolve paths **relative to the process's current working directory (CWD)**, *not* relative to the directory currently being processed by the function.
+
+When `do_ls()` is called, it might open a directory like `"parent_dir"`. Inside this call, it finds an entry named `"subdir"`. The process's CWD often remains unchanged (e.g., the directory where the user initially ran the `ls -R` command).
+
+* If you construct the full path (`"parent_dir/subdir"`), the next recursive call, `do_ls("parent_dir/subdir")`, correctly points to the intended directory regardless of the CWD.
+
+#### What Would Happen If You Called `do_ls("subdir")`?
+
+If you simply called `do_ls("subdir")` from within `do_ls("parent_dir")`, the program would attempt to open a directory named `"subdir"` **relative to the process's CWD**.
+
+This could lead to two critical errors:
+
+1.  **Failure:** If a directory named `"subdir"` does not exist in the CWD, the call to `opendir("subdir")` will fail, and the recursion chain will be broken for that branch.
+2.  **Incorrect Recursion/Infinite Loop:** If a directory named `"subdir"` *does* happen to exist in the CWD, the program will process that **wrong directory**. In a worst-case scenario, if the CWD contains a directory with the same name as one of the recursive subdirectories, it could lead to the program jumping to a completely different part of the filesystem or even triggering an **infinite loop** if the path structure is circular.
+
+By constructing the full path, you ensure that the recursive call is operating on the correct, fully qualified location in the file system, independent of the process's CWD.
