@@ -199,6 +199,7 @@ if (statbuf.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
     // The file is executable by at least one entity
 }
 
+```
 ---
 
 ## Feature 7 Questions
