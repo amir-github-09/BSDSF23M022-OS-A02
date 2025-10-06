@@ -153,6 +153,8 @@ The comparison function tells `qsort()` how to order two elements. It returns:
 ```c
 int cmpstring(const void *a, const void *b);
 
+```c
+
 ---
 
 ## Feature 6 Questions
@@ -219,7 +221,6 @@ Therefore, the base cases (the points where recursion stops) are when `do_ls()` 
 
 The most fundamental base case is encountering a **non-directory file type**.
 
-***
 
 ### Explain why it is essential to construct a full path (e.g., `"parent_dir/subdir"`) before making a recursive call. What would happen if you simply called `do_ls("subdir")` from within the `do_ls("parent_dir")` function call?
 
