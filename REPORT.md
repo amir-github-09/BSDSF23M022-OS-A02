@@ -153,7 +153,7 @@ The comparison function tells `qsort()` how to order two elements. It returns:
 ```c
 int cmpstring(const void *a, const void *b);
 
-```c
+```
 
 ---
 
@@ -179,6 +179,8 @@ The full code sequence to print text in green is:
 To print the word "Hello" in green and then **reset** the color (crucial to prevent subsequent text from also being green), you would use:
 ```c
 printf("\033[32mHello\033[0m\n");
+
+```
 
 ### To color an executable file, you need to check its permission bits. Explain which bits in the `st_mode` field you need to check to determine if a file is executable by the owner, group, or others.
 
